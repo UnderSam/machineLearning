@@ -33,12 +33,13 @@ def cross_entropy(y, y_hat):
     for i in range(len(y)):
         loss += -(y[i]*math.log(y_hat[i]) + (1-y[i])*math.log(1-y_hat[i]))
     return loss
-def logreg_sgd(X, y, alpha = .001, iters = 100, eps=1e-4, lmbda=.01):
+def logreg_sgd(X, y, alpha = .001, iters = 100000, eps=1e-4, lmbda=.001):
     ## lambda -> cross entropy
     n, d = X.shape
     theta = numpy.zeros((d, 1))
     count = 0
     isOver = False
+    losscomp = 1
     for _ in range(iters):
         if(isOver or count==iters):
             break
@@ -49,12 +50,11 @@ def logreg_sgd(X, y, alpha = .001, iters = 100, eps=1e-4, lmbda=.01):
             xrow = xrow.reshape(d,1)
             gd = xrow*(y[idx]-yhead)-lmbda*theta
             theta_two = theta + (alpha*gd)
-            if numpy.allclose(gd,numpy.zeros((d, 1)),eps,eps):
-                isOver=True
-                theta = theta_two
-                break
             theta = theta_two
-        #print(cross_entropy(y,y_hat))
+        loss = cross_entropy(y,y_hat)
+        if(abs(losscomp-loss)<eps):
+            break
+        losscomp = loss
         count+=1
     return theta
 def predict_prob(X, theta):
@@ -88,6 +88,7 @@ def plot_roc_curve(y_test, y_prob ,name):
     plt.ylim(0,1)
     plt.gca().set_aspect('equal', adjustable='box')
     plt.savefig(name)
+    plt.clf()
 
 
 def main(argv):
@@ -100,12 +101,12 @@ def main(argv):
     print("Logreg train accuracy: %f" % (sklearn.metrics.accuracy_score(y_train, y_prob > .5)))
     print("Logreg train precision: %f" % (sklearn.metrics.precision_score(y_train, y_prob > .5)))
     print("Logreg train recall: %f" % (sklearn.metrics.recall_score(y_train, y_prob > .5)))
-    plot_roc_curve(y_test.flatten(), y_prob.flatten(),"roc_curve_before_training.png")
+    plot_roc_curve(y_test.flatten(), y_prob.flatten(),"roc_curve_traindata.png")
     y_prob = predict_prob(X_test_scale, theta)
     print("Logreg test accuracy: %f" % (sklearn.metrics.accuracy_score(y_test, y_prob > .5)))
     print("Logreg test precision: %f" % (sklearn.metrics.precision_score(y_test, y_prob > .5)))
     print("Logreg test recall: %f" % (sklearn.metrics.recall_score(y_test, y_prob > .5)))
-    plot_roc_curve(y_test.flatten(), y_prob.flatten(),"roc_curve_after_training.png")
+    plot_roc_curve(y_test.flatten(), y_prob.flatten(),"roc_curve_testdata.png")
 
 
 if __name__ == "__main__":
